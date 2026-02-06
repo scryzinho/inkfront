@@ -1,3 +1,7 @@
+import { mockGuilds, mockBotStatus } from "@/lib/mock-data";
+import { MOCK_AVATAR, MOCK_TENANT_ID } from "@/lib/mock-shared";
+import { readMock } from "@/lib/mock-storage";
+
 export type UserBot = {
   tenant_id: string;
   status: string;
@@ -27,24 +31,37 @@ export type UserBot = {
   };
 };
 
-function getApiBaseUrl() {
-  const envUrl = (import.meta.env.VITE_INKCLOUD_API_URL as string | undefined)?.replace(/\/+$/, "");
-  return envUrl || "http://localhost:9000";
-}
+const DEFAULT_BOTS: UserBot[] = [
+  {
+    tenant_id: MOCK_TENANT_ID,
+    status: "active",
+    created_at: "2024-01-01T00:00:00Z",
+    guild_id: mockGuilds[0]?.id || null,
+    guild_name: mockGuilds[0]?.name || "inkCloud Community",
+    guild_icon: mockGuilds[0]?.icon || MOCK_AVATAR,
+    bot_name: "inkCloud",
+    bot_avatar: MOCK_AVATAR,
+    bot_status: mockBotStatus.online ? "online" : "offline",
+    shard_app_id: "app_demo",
+    last_heartbeat: mockBotStatus.lastHeartbeat,
+    current_version: mockBotStatus.version,
+    desired_version: mockBotStatus.version,
+    last_error: null,
+    subscription_status: "active",
+    subscription_end: null,
+    guild_member_count: mockGuilds[0]?.members ?? 0,
+    guild_roles_count: mockGuilds[0]?.roles ?? 0,
+    guild_channels_count: mockGuilds[0]?.channels ?? 0,
+    guild_boost_count: mockGuilds[0]?.boosts ?? 0,
+    guild_permissions: mockGuilds[0]?.permissions || {
+      admin: true,
+      manageChannels: true,
+      manageRoles: true,
+      manageMessages: true,
+    },
+  },
+];
 
 export async function fetchBots(): Promise<UserBot[]> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/api/bots`, {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json"
-    }
-  });
-  if (response.status === 401) return [];
-  if (!response.ok) {
-    throw new Error(`Bots error (${response.status})`);
-  }
-  const data = await response.json();
-  return data?.bots || [];
+  return readMock<UserBot[]>("inkcloud_mock_bots", DEFAULT_BOTS);
 }

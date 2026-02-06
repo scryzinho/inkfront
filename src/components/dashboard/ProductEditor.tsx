@@ -100,7 +100,16 @@ function normalizePrice(value: number) {
 
 function normalizeBanner(value: string | null) {
   if (!value) return null;
-  return value.startsWith("http://") || value.startsWith("https://") ? value : null;
+  if (
+    value.startsWith("http://") ||
+    value.startsWith("https://") ||
+    value.startsWith("blob:") ||
+    value.startsWith("data:") ||
+    value.startsWith("/")
+  ) {
+    return value;
+  }
+  return null;
 }
 
 function toSafeJson<T>(value: T): T {

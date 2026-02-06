@@ -72,12 +72,6 @@ export default function Setup() {
   });
 
   useEffect(() => {
-    const subscribed = localStorage.getItem("inkcloud_subscribed");
-    if (!subscribed) {
-      navigate("/checkout");
-      return;
-    }
-
     let mounted = true;
     setGuildsLoading(true);
     setGuildsError(null);
@@ -87,7 +81,7 @@ export default function Setup() {
         const fetchedUser = await fetchMe();
         if (!mounted) return;
         if (!fetchedUser) {
-          navigate("/login");
+          setGuildsLoading(false);
           return;
         }
         setUser(fetchedUser);
@@ -117,7 +111,7 @@ export default function Setup() {
         setGuildsLoading(false);
         setGuildsError(error instanceof Error ? error.message : "Não foi possível carregar seus servidores.");
         if (error instanceof Error && /auth/.test(error.message.toLowerCase())) {
-          navigate("/login");
+          // ignore auth errors in preview
         }
       }
     })();

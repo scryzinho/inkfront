@@ -1,4 +1,5 @@
-import { getSelectedTenantId } from "@/lib/tenant";
+import { mockBotStatus, mockGuilds } from "@/lib/mock-data";
+import { MOCK_AVATAR } from "@/lib/mock-shared";
 
 export type DashboardGuildPermissions = {
   admin: boolean;
@@ -34,29 +35,30 @@ export type DashboardOverviewResponse = {
   guild: DashboardGuildOverview | null;
 };
 
-function getApiBaseUrl() {
-  const envUrl = (import.meta.env.VITE_INKCLOUD_API_URL as string | undefined)?.replace(/\/+$/, "");
-  return envUrl || "http://localhost:9000";
-}
-
-export async function fetchDashboardOverview(
-  tenantOverride?: string | null
-): Promise<DashboardOverviewResponse> {
-  const baseUrl = getApiBaseUrl();
-  const tenantId = tenantOverride || getSelectedTenantId();
-  const response = await fetch(`${baseUrl}/api/dashboard/overview`, {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(tenantId ? { "X-Tenant-Id": tenantId } : {})
-    }
-  });
-  if (response.status === 401) {
-    throw new Error("Não autorizado");
-  }
-  if (!response.ok) {
-    throw new Error(`Dashboard overview error (${response.status})`);
-  }
-  return response.json();
+export async function fetchDashboardOverview(_tenantOverride?: string | null): Promise<DashboardOverviewResponse> {
+  const guild = mockGuilds[0];
+  return {
+    bot: {
+      online: mockBotStatus.online,
+      uptime_seconds: 123456,
+      version: mockBotStatus.version,
+      last_heartbeat: mockBotStatus.lastHeartbeat,
+      token_valid: mockBotStatus.tokenStatus === "valid",
+      name: "inkCloud Bot",
+      avatar: MOCK_AVATAR,
+      tag: "inkCloud#0001",
+    },
+    guild: guild
+      ? {
+          guild_id: guild.id,
+          name: guild.name,
+          icon: guild.icon || MOCK_AVATAR,
+          members: guild.members,
+          channels: guild.channels,
+          roles: guild.roles,
+          boosts: guild.boosts,
+          permissions: guild.permissions,
+        }
+      : null,
+  };
 }

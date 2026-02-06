@@ -8,7 +8,6 @@ import { GlassButton } from "@/components/ui/GlassButton";
 import { GlassInput } from "@/components/ui/GlassInput";
 import { AnimatedBackground } from "@/components/ui/AnimatedBackground";
 import { cn } from "@/lib/utils";
-import { fetchMe } from "@/lib/api/auth";
 
 type CheckoutState = "method" | "form" | "pix" | "processing" | "success";
 type PaymentMethod = "card" | "pix";
@@ -33,26 +32,6 @@ export default function Checkout() {
   const [cvc, setCvc] = useState("");
   const [copied, setCopied] = useState(false);
   const [pixCountdown, setPixCountdown] = useState(3);
-
-  // Check if user is logged in
-  useEffect(() => {
-    let mounted = true;
-    fetchMe()
-      .then((user) => {
-        if (!mounted) return;
-        if (!user) {
-          navigate("/login?redirect=/checkout");
-        }
-      })
-      .catch(() => {
-        if (mounted) {
-          navigate("/login?redirect=/checkout");
-        }
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [navigate]);
 
   // Auto-approve PIX after 3 seconds
   useEffect(() => {

@@ -1,63 +1,49 @@
-function getApiBaseUrl() {
-  const envUrl = (import.meta.env.VITE_INKCLOUD_API_URL as string | undefined)?.replace(/\/+$/, "");
-  return envUrl || "http://localhost:9000";
-}
+import { mockCloudTasks } from "@/lib/mock-data";
+import { readMock, writeMock } from "@/lib/mock-storage";
 
-async function apiRequest(path: string, options: RequestInit = {}) {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-  return response;
-}
+const CONFIG_KEY = "inkcloud_mock_cloud_config";
+const TASKS_KEY = "inkcloud_mock_cloud_tasks";
+
+const DEFAULT_CONFIG = {
+  client_id: "",
+  client_secret: "",
+  token: "",
+  log_channel_id: null,
+  message_verify: {
+    message_style: "embed",
+    button: { label: "Verificar", emoji: "", style: "green" },
+    embed: { title: "", description: "", image_url: "", thumbnail_url: "", color: "#5865F2" },
+    content: { content: "", image_url: "" },
+    container: { content: "", image_url: "", thumbnail_url: "", color: "#5865F2" },
+  },
+  definitions: {},
+  monitor_enabled: false,
+};
+
+const DEFAULT_TASKS = mockCloudTasks.map((task) => ({
+  id: task.id,
+  name: task.name,
+  type: task.type,
+  status: task.status === "completed" ? "finished" : task.status,
+  progress: task.progress,
+  created_at: task.createdAt,
+  completed_at: task.completedAt || null,
+}));
 
 export async function fetchCloudConfig(): Promise<{ config: Record<string, any>; tasks: any[] }> {
-  const response = await apiRequest("/api/cloud/config", { method: "GET" });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Cloud config error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return { config: data.config || {}, tasks: data.tasks || [] };
+  const config = readMock<Record<string, any>>(CONFIG_KEY, DEFAULT_CONFIG);
+  const tasks = readMock<any[]>(TASKS_KEY, DEFAULT_TASKS);
+  return { config, tasks };
 }
 
 export async function updateCloudConfig(config: Record<string, any>): Promise<Record<string, any>> {
-  const response = await apiRequest("/api/cloud/config", {
-    method: "PUT",
-    body: JSON.stringify({ config }),
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Cloud config update error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.config || {};
+  return writeMock<Record<string, any>>(CONFIG_KEY, config);
 }
 
 export async function updateCloudTasks(tasks: any[]): Promise<any[]> {
-  const response = await apiRequest("/api/cloud/tasks", {
-    method: "PUT",
-    body: JSON.stringify({ tasks }),
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Cloud tasks update error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.tasks || [];
+  return writeMock<any[]>(TASKS_KEY, tasks || []);
 }
 
-export async function sendCloudMessage(payload: { channel_id: string }): Promise<void> {
-  const response = await apiRequest("/api/cloud/send", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Cloud send error (${response.status}): ${text || "unknown"}`);
-  }
+export async function sendCloudMessage(_payload: { channel_id: string }): Promise<void> {
+  return;
 }

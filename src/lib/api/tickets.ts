@@ -1,21 +1,6 @@
-import { getSelectedTenantId } from "@/lib/tenant";
-
-function getApiBaseUrl() {
-  const envUrl = (import.meta.env.VITE_INKCLOUD_API_URL as string | undefined)?.replace(/\/+$/, "");
-  return envUrl || "http://localhost:9000";
-}
-
-async function apiRequest(path: string, options: RequestInit = {}) {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-  return response;
-}
+import { mockTicketPanels, mockTickets } from "@/lib/mock-data";
+import { MOCK_CHANNELS, MOCK_ROLES } from "@/lib/mock-shared";
+import { readMock, writeMock } from "@/lib/mock-storage";
 
 export type TicketChannel = {
   id: string;
@@ -32,75 +17,79 @@ export type TicketsConfig = {
   panels?: Record<string, any>;
 };
 
+const CONFIG_KEY = "inkcloud_mock_tickets_config";
+const DATA_KEY = "inkcloud_mock_tickets_data";
+
+function buildInitialConfig(): TicketsConfig {
+  const panels: Record<string, any> = {};
+  mockTicketPanels.forEach((panel) => {
+    panels[panel.id] = {
+      name: panel.name,
+      enabled: panel.active,
+      mode: "channel",
+      message_style: "embed",
+      channel_id: panel.channelId,
+      category_id: panel.categoryId,
+      roles: { mention: panel.roles || [] },
+      options: (panel.options || []).map((opt) => ({
+        id: opt.id,
+        name: opt.label,
+        description: opt.description,
+        emoji: opt.emoji,
+      })),
+    };
+  });
+  return { panels };
+}
+
+function buildInitialData() {
+  const data: Record<string, any> = { panels: {} };
+  mockTickets.forEach((ticket) => {
+    const panelId = ticket.panelId;
+    if (!data.panels[panelId]) {
+      data.panels[panelId] = {};
+    }
+    if (!data.panels[panelId][ticket.userId]) {
+      data.panels[panelId][ticket.userId] = [];
+    }
+    data.panels[panelId][ticket.userId].push({
+      ticket_id: ticket.id,
+      status: ticket.status,
+      created_at: Math.floor(new Date(ticket.createdAt).getTime() / 1000),
+    });
+  });
+  return data;
+}
+
+const DEFAULT_CONFIG = buildInitialConfig();
+const DEFAULT_DATA = buildInitialData();
+
 export async function fetchTicketsConfig(): Promise<TicketsConfig> {
-  const response = await apiRequest("/api/tickets/config", { method: "GET" });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Tickets config error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.config || {};
+  return readMock<TicketsConfig>(CONFIG_KEY, DEFAULT_CONFIG);
 }
 
 export async function updateTicketsConfig(config: TicketsConfig): Promise<{ status: string }> {
-  const response = await apiRequest("/api/tickets/config", {
-    method: "PUT",
-    body: JSON.stringify({ config }),
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Tickets config update error (${response.status}): ${text || "unknown"}`);
-  }
-  return response.json();
+  writeMock<TicketsConfig>(CONFIG_KEY, config);
+  return { status: "ok" };
 }
 
 export async function fetchTicketsData(): Promise<any> {
-  const response = await apiRequest("/api/tickets/data", { method: "GET" });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Tickets data error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.data || {};
+  return readMock<any>(DATA_KEY, DEFAULT_DATA);
 }
 
-export async function sendTicketsPanel(panel_id: string): Promise<{ status: string; message_id?: string }> {
-  const response = await apiRequest("/api/tickets/panel/send", {
-    method: "POST",
-    body: JSON.stringify({ panel_id }),
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Tickets panel send error (${response.status}): ${text || "unknown"}`);
-  }
-  return response.json();
+export async function sendTicketsPanel(_panel_id: string): Promise<{ status: string; message_id?: string }> {
+  return { status: "ok", message_id: `msg_${Date.now().toString(36)}` };
 }
 
 export async function fetchTicketChannels(includeCategories = true): Promise<TicketChannel[]> {
-  const tenantId = getSelectedTenantId();
-  const query = new URLSearchParams();
-  if (includeCategories) query.set("include_categories", "true");
-  if (tenantId) query.set("tenant_id", tenantId);
-  const response = await apiRequest(`/api/store/channels?${query.toString()}`, { method: "GET" });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Tickets channels error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.channels || [];
+  return (MOCK_CHANNELS as TicketChannel[]).filter((channel) => {
+    if (!includeCategories && channel.type === 4) return false;
+    return true;
+  });
 }
 
 export async function fetchTicketRoles(): Promise<TicketRole[]> {
-  const tenantId = getSelectedTenantId();
-  const query = new URLSearchParams();
-  if (tenantId) query.set("tenant_id", tenantId);
-  const response = await apiRequest(`/api/store/roles?${query.toString()}`, { method: "GET" });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Tickets roles error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.roles || [];
+  return MOCK_ROLES as TicketRole[];
 }
 
 export type TicketImageTarget =
@@ -116,25 +105,11 @@ export type TicketImageTarget =
   | "open_container_thumb";
 
 export async function uploadTicketImage(
-  target: TicketImageTarget,
+  _target: TicketImageTarget,
   file: File,
-  panelId?: string,
-  optionId?: string
+  _panelId?: string,
+  _optionId?: string,
 ): Promise<{ url: string }> {
-  const url = new URL(`${getApiBaseUrl()}/api/tickets/image`);
-  url.searchParams.set("target", target);
-  if (panelId) url.searchParams.set("panel_id", panelId);
-  if (optionId) url.searchParams.set("option_id", optionId);
-  const form = new FormData();
-  form.append("file", file);
-  const response = await fetch(url.toString(), {
-    method: "POST",
-    credentials: "include",
-    body: form,
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Ticket image upload error (${response.status}): ${text || "unknown"}`);
-  }
-  return response.json();
+  const url = typeof URL !== "undefined" && URL.createObjectURL ? URL.createObjectURL(file) : "";
+  return { url };
 }

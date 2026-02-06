@@ -1,26 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
+import {
   Menu, 
   Search, 
   ChevronDown, 
-  LogOut, 
   Settings,
   ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { mockGuilds } from "@/lib/mock-data";
-import { fetchMe, logout } from "@/lib/api/auth";
 import { fetchBots } from "@/lib/api/bots";
 import { useTenant } from "@/lib/tenant";
+import { MOCK_AVATAR } from "@/lib/mock-shared";
 
 interface TopbarProps {
   onMenuClick: () => void;
   sidebarCollapsed: boolean;
 }
-
-const REFRESH_INTERVAL_MS = 30_000;
 
 const routeTitles: Record<string, string> = {
   "/dashboard": "Visão Geral",
@@ -51,41 +48,9 @@ export function Topbar({ onMenuClick, sidebarCollapsed }: TopbarProps) {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [user, setUser] = useState<{ username: string; avatar: string | null } | null>(() => {
-    try {
-      const cached = window.localStorage.getItem("inkcloud_me_cache");
-      if (!cached) return null;
-      return JSON.parse(cached) as { username: string; avatar: string | null };
-    } catch {
-      return null;
-    }
-  });
+  const user = { username: "Conta Demo", avatar: MOCK_AVATAR };
   const botMenuRef = useRef<HTMLDivElement | null>(null);
   const isMountedRef = useRef(true);
-
-  const refreshUser = useCallback(async () => {
-    try {
-      const me = await fetchMe();
-      if (!isMountedRef.current) return;
-      if (me) {
-        const nextUser = { username: me.username, avatar: me.avatar };
-        setUser(nextUser);
-        if (typeof window !== "undefined") {
-          try {
-            window.localStorage.setItem("inkcloud_me_cache", JSON.stringify(nextUser));
-          } catch {
-            // ignore cache write errors
-          }
-        }
-      } else {
-        setUser(null);
-      }
-    } catch {
-      if (isMountedRef.current) {
-        setUser(null);
-      }
-    }
-  }, []);
 
   const refreshBots = useCallback(async () => {
     try {
@@ -108,13 +73,7 @@ export function Topbar({ onMenuClick, sidebarCollapsed }: TopbarProps) {
             // ignore cache errors
           }
         }
-        try {
-          await logout();
-        } catch {
-          // ignore logout errors
-        }
         if (!isMountedRef.current) return;
-        navigate("/login");
         return;
       }
       const hasCurrent = tenantId && data.some((bot) => bot.tenant_id === tenantId);
@@ -126,39 +85,14 @@ export function Topbar({ onMenuClick, sidebarCollapsed }: TopbarProps) {
         setBots([]);
       }
     }
-  }, [navigate, setTenantId, tenantId]);
+  }, [setTenantId, tenantId]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
     isMountedRef.current = true;
-    void refreshUser();
-    const interval = window.setInterval(() => {
-      void refreshUser();
-    }, REFRESH_INTERVAL_MS);
-    const onFocus = () => {
-      void refreshUser();
-    };
-    window.addEventListener("focus", onFocus);
+    void refreshBots();
     return () => {
       isMountedRef.current = false;
-      window.clearInterval(interval);
-      window.removeEventListener("focus", onFocus);
-    };
-  }, [refreshUser]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return undefined;
-    void refreshBots();
-    const interval = window.setInterval(() => {
-      void refreshBots();
-    }, REFRESH_INTERVAL_MS);
-    const onFocus = () => {
-      void refreshBots();
-    };
-    window.addEventListener("focus", onFocus);
-    return () => {
-      window.clearInterval(interval);
-      window.removeEventListener("focus", onFocus);
     };
   }, [refreshBots]);
 
@@ -170,7 +104,7 @@ export function Topbar({ onMenuClick, sidebarCollapsed }: TopbarProps) {
         icon:
           bot.bot_avatar ||
           bot.guild_icon ||
-          "https://cdn.discordapp.com/embed/avatars/0.png",
+          MOCK_AVATAR,
         status: bot.bot_status,
       }));
     }
@@ -379,7 +313,7 @@ export function Topbar({ onMenuClick, sidebarCollapsed }: TopbarProps) {
               aria-label="Menu do usuário"
             >
               <img
-                src={user?.avatar || "https://cdn.discordapp.com/embed/avatars/0.png"}
+                src={user?.avatar || MOCK_AVATAR}
                 alt="Avatar"
                 className="w-full h-full object-cover"
               />
@@ -420,19 +354,12 @@ export function Topbar({ onMenuClick, sidebarCollapsed }: TopbarProps) {
                     <button
                       onClick={() => {
                         setIsProfileDropdownOpen(false);
-                        logout()
-                          .catch(() => {})
-                          .finally(() => {
-                            localStorage.removeItem("inkcloud_subscribed");
-                            localStorage.removeItem("inkcloud_setup");
-                            navigate("/");
-                          });
+                        navigate("/");
                       }}
-                      className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-left text-destructive hover:bg-destructive/10 transition-colors"
+                      className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-left text-muted-foreground hover:bg-white/5 transition-colors"
                       role="menuitem"
                     >
-                      <LogOut className="w-4 h-4" />
-                      Sair
+                      Voltar ao site
                     </button>
                   </motion.div>
                 </>

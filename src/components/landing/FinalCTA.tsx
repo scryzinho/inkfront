@@ -1,10 +1,8 @@
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { GlassButton } from "@/components/ui/GlassButton";
-import { fetchMe } from "@/lib/api/auth";
-import { fetchBots } from "@/lib/api/bots";
 
 export function FinalCTA() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -12,40 +10,10 @@ export function FinalCTA() {
     target: containerRef,
     offset: ["start end", "end start"]
   });
-  const [hasDashboardAccess, setHasDashboardAccess] = useState(false);
+  const hasDashboardAccess = true;
 
   const scale = useTransform(scrollYProgress, [0, 0.5], [0.95, 1]);
   const opacity = useTransform(scrollYProgress, [0, 0.3], [0, 1]);
-
-  useEffect(() => {
-    let mounted = true;
-    fetchMe()
-      .then((me) => {
-        if (!mounted || !me) {
-          if (mounted) setHasDashboardAccess(false);
-          return;
-        }
-        if (!me.has_selected_guild) {
-          if (mounted) setHasDashboardAccess(false);
-          return;
-        }
-        fetchBots()
-          .then((bots) => {
-            if (!mounted) return;
-            setHasDashboardAccess(bots.length > 0);
-          })
-          .catch(() => {
-            if (mounted) setHasDashboardAccess(false);
-          });
-      })
-      .catch(() => {
-        if (mounted) setHasDashboardAccess(false);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   return (
     <section ref={containerRef} className="py-40 relative overflow-hidden">

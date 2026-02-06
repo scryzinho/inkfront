@@ -1209,37 +1209,49 @@ export default function GiveawaysPage() {
                 </Tabs>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">Selecione um sorteio para configurar.</p>
+              <div className="flex items-center justify-center py-16 animate-fade-up">
+                <div className="text-center">
+                  <Gift className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                  <p className="text-sm text-muted-foreground">Selecione um sorteio para configurar</p>
+                </div>
+              </div>
             )}
           </div>
         )}
       </GlassCard>
 
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Novo Sorteio">
-        <div className="space-y-4">
-          <GlassInput
-            placeholder="Nome do sorteio"
-            value={createDraft.name}
-            onChange={(event) => setCreateDraft((prev) => ({ ...prev, name: event.target.value }))}
-          />
-          <GlassSelect
-            value={createDraft.mode}
-            onValueChange={(value) => setCreateDraft((prev) => ({ ...prev, mode: value as "real" | "falso" }))}
-          >
-            <GlassSelectTrigger className="px-3 py-2 text-sm rounded-lg bg-white/5 border border-white/10 outline-none">
-              <GlassSelectValue />
-            </GlassSelectTrigger>
-            <GlassSelectContent>
-              <GlassSelectItem value="real">Sorteio Real</GlassSelectItem>
-              <GlassSelectItem value="falso">Sorteio Falso</GlassSelectItem>
-            </GlassSelectContent>
-          </GlassSelect>
-          <div className="flex justify-end gap-2">
+        <div className="space-y-4 animate-fade-up">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Nome do sorteio</label>
+            <GlassInput
+              placeholder="Digite o nome do sorteio"
+              value={createDraft.name}
+              onChange={(event) => setCreateDraft((prev) => ({ ...prev, name: event.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Tipo de sorteio</label>
+            <GlassSelect
+              value={createDraft.mode}
+              onValueChange={(value) => setCreateDraft((prev) => ({ ...prev, mode: value as "real" | "falso" }))}
+            >
+              <GlassSelectTrigger className="px-3 py-2 text-sm rounded-lg bg-white/5 border border-white/10 outline-none">
+                <GlassSelectValue />
+              </GlassSelectTrigger>
+              <GlassSelectContent>
+                <GlassSelectItem value="real">Sorteio Real</GlassSelectItem>
+                <GlassSelectItem value="falso">Sorteio Falso</GlassSelectItem>
+              </GlassSelectContent>
+            </GlassSelect>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
             <GlassButton variant="ghost" onClick={() => setShowCreateModal(false)}>
               Cancelar
             </GlassButton>
             <GlassButton variant="primary" onClick={handleCreate}>
-              Criar
+              <Gift className="w-4 h-4 mr-2" />
+              Criar sorteio
             </GlassButton>
           </div>
         </div>

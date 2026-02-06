@@ -44,6 +44,7 @@ import {
 } from "@/lib/api/dashboard";
 import { fetchStoreMetrics, type StoreMetrics } from "@/lib/api/store";
 import { useTenant } from "@/lib/tenant";
+import { MOCK_AVATAR } from "@/lib/mock-shared";
 
 const DEFAULT_GUILD_PERMISSIONS = {
   admin: false,
@@ -55,7 +56,7 @@ const DEFAULT_GUILD_PERMISSIONS = {
 const DEFAULT_GUILD_OVERVIEW: DashboardGuildOverview = {
   guild_id: "—",
   name: "Nenhum servidor conectado",
-  icon: "https://cdn.discordapp.com/embed/avatars/0.png",
+  icon: MOCK_AVATAR,
   members: 0,
   channels: 0,
   roles: 0,
@@ -63,7 +64,7 @@ const DEFAULT_GUILD_OVERVIEW: DashboardGuildOverview = {
   permissions: DEFAULT_GUILD_PERMISSIONS,
 };
 
-const DEFAULT_BOT_AVATAR = "https://cdn.discordapp.com/embed/avatars/0.png";
+const DEFAULT_BOT_AVATAR = MOCK_AVATAR;
 
 function formatUptime(seconds?: number | null) {
   if (typeof seconds !== "number" || Number.isNaN(seconds)) {

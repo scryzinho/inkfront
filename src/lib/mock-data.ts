@@ -24,6 +24,7 @@ import type {
   StoreStats,
   TicketStats,
 } from "./types";
+import { MOCK_AVATAR } from "./mock-shared";
 
 export const mockBotStatus: BotStatus = {
   online: true,
@@ -37,7 +38,7 @@ export const mockGuilds: GuildOverview[] = [
   {
     id: "123456789",
     name: "inkCloud Community",
-    icon: "https://cdn.discordapp.com/embed/avatars/0.png",
+    icon: MOCK_AVATAR,
     members: 1542,
     channels: 24,
     roles: 18,
@@ -52,7 +53,7 @@ export const mockGuilds: GuildOverview[] = [
   {
     id: "987654321",
     name: "Dev Server",
-    icon: "https://cdn.discordapp.com/embed/avatars/1.png",
+    icon: MOCK_AVATAR,
     members: 89,
     channels: 12,
     roles: 8,
@@ -154,7 +155,7 @@ export const mockCustomers: Customer[] = [
     id: "user_1",
     discordId: "123456789012345678",
     username: "João#1234",
-    avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
+    avatar: MOCK_AVATAR,
     totalSpent: 259.70,
     orders: 8,
     lastPurchase: "2024-01-15",
@@ -165,7 +166,7 @@ export const mockCustomers: Customer[] = [
     id: "user_2",
     discordId: "234567890123456789",
     username: "Maria#5678",
-    avatar: "https://cdn.discordapp.com/embed/avatars/1.png",
+    avatar: MOCK_AVATAR,
     totalSpent: 89.70,
     orders: 3,
     lastPurchase: "2024-01-14",
@@ -429,7 +430,7 @@ export const mockAppearanceConfig: AppearanceConfig = {
   },
   info: {
     name: "inkCloud Bot",
-    avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
+    avatar: MOCK_AVATAR,
     banner: "",
   },
   mode: "dark",

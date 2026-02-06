@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle, ExternalLink, Loader2 } from "lucide-react";
@@ -6,62 +6,18 @@ import { Header } from "@/components/layout/Header";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { GlassButton } from "@/components/ui/GlassButton";
 import { AnimatedBackground } from "@/components/ui/AnimatedBackground";
-import { fetchInvite, revalidateGuild } from "@/lib/api/auth";
-import { toast } from "@/components/ui/sonner";
 
 export default function JoinInkcloud() {
   const navigate = useNavigate();
-  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
-  const [loadingInvite, setLoadingInvite] = useState(true);
+  const [loadingInvite, setLoadingInvite] = useState(false);
   const [checking, setChecking] = useState(false);
 
-  useEffect(() => {
-    let mounted = true;
-    fetchInvite()
-      .then((data) => {
-        if (!mounted) return;
-        if (data.in_guild) {
-          navigate("/dashboard");
-          return;
-        }
-        setInviteUrl(data.invite_url || null);
-      })
-      .catch((error) => {
-        if (mounted) {
-          const message = String(error);
-          if (message.includes("401")) {
-            navigate("/login");
-            return;
-          }
-          toast({ title: "Erro ao buscar convite", description: message });
-        }
-      })
-      .finally(() => {
-        if (mounted) setLoadingInvite(false);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [navigate]);
-
-  const handleRevalidate = async () => {
+  const handleGoDashboard = () => {
     setChecking(true);
-    try {
-      const result = await revalidateGuild();
-      if (result.is_in_guild) {
-        navigate("/dashboard");
-        return;
-      }
-      toast({
-        title: "Ainda não encontramos você no servidor",
-        description: "Entre no servidor e tente novamente."
-      });
-    } catch (error) {
-      toast({ title: "Erro ao validar", description: String(error) });
-    } finally {
+    setTimeout(() => {
       setChecking(false);
-    }
+      navigate("/dashboard");
+    }, 600);
   };
 
   return (
@@ -101,10 +57,9 @@ export default function JoinInkcloud() {
                     <GlassButton
                       variant="primary"
                       className="w-full"
-                      onClick={() => inviteUrl && window.open(inviteUrl, "_blank", "noopener")}
-                      disabled={!inviteUrl}
+                      onClick={handleGoDashboard}
                     >
-                      Entrar no servidor
+                      Ir para o dashboard
                       <ExternalLink className="w-4 h-4" />
                     </GlassButton>
                   )}
@@ -113,9 +68,9 @@ export default function JoinInkcloud() {
                     variant="ghost"
                     className="w-full"
                     loading={checking}
-                    onClick={handleRevalidate}
+                    onClick={handleGoDashboard}
                   >
-                    Já entrei
+                    Ver painéis
                   </GlassButton>
                 </div>
               </div>

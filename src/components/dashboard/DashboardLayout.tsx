@@ -1,50 +1,16 @@
-import { useState, useEffect } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { cn } from "@/lib/utils";
-import { fetchMe } from "@/lib/api/auth";
 import { TenantProvider, useTenant } from "@/lib/tenant";
 import { CustomModeProvider } from "@/lib/custom-mode";
 
 function DashboardLayoutContent() {
-  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
   const { tenantId } = useTenant();
-
-  useEffect(() => {
-    let mounted = true;
-    fetchMe()
-      .then((user) => {
-        if (!mounted) return;
-        if (!user) {
-          navigate("/login");
-          return;
-        }
-        const setup = localStorage.getItem("inkcloud_setup");
-        const subscribed = localStorage.getItem("inkcloud_subscribed");
-        if (!setup) {
-          navigate(subscribed ? "/setup" : "/checkout");
-          return;
-        }
-        setAuthChecked(true);
-      })
-      .catch(() => {
-        if (mounted) {
-          navigate("/login");
-        }
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [navigate]);
-
-  if (!authChecked || !tenantId) {
-    return <div className="min-h-screen bg-background" />;
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -75,7 +41,7 @@ function DashboardLayoutContent() {
         )}
       >
         <motion.div
-          key={tenantId || "no-tenant"}
+          key={tenantId || "preview"}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}

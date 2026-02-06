@@ -4,7 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import Login from "./pages/Login";
 import Checkout from "./pages/Checkout";
 import Setup from "./pages/Setup";
 import JoinInkcloud from "./pages/JoinInkcloud";
@@ -32,7 +31,6 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/setup" element={<Setup />} />
           <Route path="/join-inkcloud" element={<JoinInkcloud />} />

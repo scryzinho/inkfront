@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LogIn, LogOut } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { GlassButton } from "@/components/ui/GlassButton";
-import { fetchMe, logout } from "@/lib/api/auth";
+import { MOCK_AVATAR } from "@/lib/mock-shared";
 
 const navLinks = [
   { label: "Recursos", href: "#recursos" },
@@ -20,41 +20,14 @@ interface DiscordUser {
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<DiscordUser | null>(null);
   const location = useLocation();
   const isLanding = location.pathname === "/";
 
-  useEffect(() => {
-    let mounted = true;
-    fetchMe()
-      .then((me) => {
-        if (!mounted) return;
-        if (me) {
-          setUser({
-            id: me.discord_user_id,
-            username: me.username,
-            avatar: me.avatar,
-            has_selected_guild: me.has_selected_guild
-          });
-        } else {
-          setUser(null);
-        }
-      })
-      .catch(() => {
-        if (mounted) setUser(null);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [location]);
-
-  const handleLogout = () => {
-    logout()
-      .catch(() => {})
-      .finally(() => {
-        setUser(null);
-        window.location.href = "/";
-      });
+  const user: DiscordUser = {
+    id: "demo",
+    username: "Conta Demo",
+    avatar: MOCK_AVATAR,
+    has_selected_guild: true,
   };
 
   return (
@@ -89,62 +62,37 @@ export function Header() {
 
             {/* Desktop CTA */}
             <div className="hidden md:flex items-center gap-3">
-              {user ? (
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
-                    <img
-                      src={user.avatar || "https://cdn.discordapp.com/embed/avatars/0.png"}
-                      alt={user.username}
-                      className="w-6 h-6 rounded-full"
-                    />
-                    <span className="text-sm font-medium">{user.username}</span>
-                  </div>
-                  
-                  {isLanding ? (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
+                  <img
+                    src={user.avatar || MOCK_AVATAR}
+                    alt={user.username}
+                    className="w-6 h-6 rounded-full"
+                  />
+                  <span className="text-sm font-medium">{user.username}</span>
+                </div>
+
+                {isLanding ? (
+                  <>
                     <Link to="/checkout">
                       <GlassButton variant="primary" size="sm">
                         Assinar
                       </GlassButton>
                     </Link>
-                  ) : user.has_selected_guild ? (
                     <Link to="/dashboard">
-                      <GlassButton variant="default" size="sm">
-                        Dashboard
+                      <GlassButton variant="ghost" size="sm">
+                        Ver Dashboard
                       </GlassButton>
                     </Link>
-                  ) : (
-                    <Link to="/checkout">
-                      <GlassButton variant="default" size="sm">
-                        Selecionar servidor
-                      </GlassButton>
-                    </Link>
-                  )}
-                  
-                  <button
-                    onClick={handleLogout}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground"
-                    title="Sair"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <Link to="/login">
-                    <GlassButton variant="ghost" size="sm">
-                      <LogIn className="w-4 h-4" />
-                      Entrar
+                  </>
+                ) : (
+                  <Link to="/dashboard">
+                    <GlassButton variant="default" size="sm">
+                      Dashboard
                     </GlassButton>
                   </Link>
-                  {isLanding && (
-                    <Link to="/login?redirect=/checkout">
-                      <GlassButton variant="primary" size="sm">
-                        Assinar
-                      </GlassButton>
-                    </Link>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Mobile Menu Button */}
@@ -175,24 +123,16 @@ export function Header() {
           >
             <div className="container py-4 space-y-4">
               {/* User info on mobile */}
-              {user && (
-                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={user.avatar || "https://cdn.discordapp.com/embed/avatars/0.png"}
-                      alt={user.username}
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <span className="text-sm font-medium">{user.username}</span>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-2">
+                  <img
+                    src={user.avatar || MOCK_AVATAR}
+                    alt={user.username}
+                    className="w-8 h-8 rounded-full"
+                  />
+                  <span className="text-sm font-medium">{user.username}</span>
                 </div>
-              )}
+              </div>
 
               {isLanding && (
                 <nav className="flex flex-col gap-2">
@@ -210,37 +150,23 @@ export function Header() {
               )}
               
               <div className="pt-2 border-t border-white/5 space-y-2">
-                {user ? (
+                <Link
+                  to={isLanding ? "/checkout" : "/dashboard"}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <GlassButton variant="primary" className="w-full">
+                    {isLanding ? "Assinar" : "Dashboard"}
+                  </GlassButton>
+                </Link>
+                {isLanding && (
                   <Link
-                    to={isLanding ? "/checkout" : "/dashboard"}
+                    to="/dashboard"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <GlassButton variant="primary" className="w-full">
-                      {isLanding ? "Assinar" : user.has_selected_guild ? "Dashboard" : "Selecionar servidor"}
+                    <GlassButton variant="ghost" className="w-full">
+                      Ver Dashboard
                     </GlassButton>
                   </Link>
-                ) : (
-                  <>
-                    <Link
-                      to="/login"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <GlassButton variant="ghost" className="w-full">
-                        <LogIn className="w-4 h-4" />
-                        Entrar com Discord
-                      </GlassButton>
-                    </Link>
-                    {isLanding && (
-                      <Link
-                        to="/login?redirect=/checkout"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        <GlassButton variant="primary" className="w-full">
-                          Assinar
-                        </GlassButton>
-                      </Link>
-                    )}
-                  </>
                 )}
               </div>
             </div>

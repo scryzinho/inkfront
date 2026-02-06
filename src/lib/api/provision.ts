@@ -1,3 +1,5 @@
+import { MOCK_TENANT_ID } from "@/lib/mock-shared";
+
 export type ProvisionRequest = {
   discord_bot_token: string;
   guild_id: string;
@@ -14,42 +16,15 @@ export type ProvisionResponse = {
   app_status: string;
 };
 
-function getApiBaseUrl() {
-  const envUrl = (import.meta.env.VITE_INKCLOUD_API_URL as string | undefined)?.replace(/\/+$/, "");
-  return envUrl || "http://localhost:9000";
+export async function validateBotToken(_token: string): Promise<{ valid: boolean; reason?: string }> {
+  return { valid: true };
 }
 
-export async function validateBotToken(token: string): Promise<{ valid: boolean; reason?: string }> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/api/validate-token`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ discord_bot_token: token })
-  });
-
-  if (!response.ok) {
-    throw new Error(`Falha ao validar token (${response.status})`);
-  }
-
-  return response.json();
-}
-
-export async function provisionBot(payload: ProvisionRequest): Promise<ProvisionResponse> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/api/provision`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Provisionamento falhou (${response.status})`);
-  }
-
-  return response.json();
+export async function provisionBot(_payload: ProvisionRequest): Promise<ProvisionResponse> {
+  return {
+    tenant_id: MOCK_TENANT_ID,
+    status: "provisioned",
+    current_period_end: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString(),
+    app_status: "online",
+  };
 }

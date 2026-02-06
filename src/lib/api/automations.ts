@@ -1,3 +1,5 @@
+import { readMock, writeMock } from "@/lib/mock-storage";
+
 export type SuggestionsAutoModerationConfig = {
   enabled: boolean;
   mode: "porcentagem" | "quantidade";
@@ -14,33 +16,6 @@ export type SuggestionsConfig = {
   thread_message: string;
   auto_moderation: SuggestionsAutoModerationConfig;
 };
-
-function getApiBaseUrl() {
-  const envUrl = (import.meta.env.VITE_INKCLOUD_API_URL as string | undefined)?.replace(/\/+$/, "");
-  return envUrl || "http://localhost:9000";
-}
-
-async function apiRequest(path: string, options: RequestInit = {}) {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-  return response;
-}
-
-export async function fetchSuggestionsConfig(): Promise<SuggestionsConfig> {
-  const response = await apiRequest("/api/automations/suggestions-config", { method: "GET" });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Suggestions config error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.config as SuggestionsConfig;
-}
 
 export type CallCounterBackendConfig = {
   enabled: boolean;
@@ -101,160 +76,125 @@ export type NukeConfig = {
   canais: Record<string, NukeChannelConfig>;
 };
 
-const DEFAULT_CALL_COUNTER_CONFIG: CallCounterConfig = {
+const DEFAULT_AUTO_MOD: SuggestionsAutoModerationConfig = {
   enabled: false,
-  channelId: null,
-  message: "Chamadas hoje: {count}",
-  count: 0,
+  mode: "porcentagem",
+  approval_threshold: 75,
+  rejection_threshold: 25,
+  approval_delay_hours: 24,
 };
 
-function mapCallCounterFromBackend(payload: CallCounterBackendConfig | null | undefined): CallCounterConfig {
-  if (!payload) return { ...DEFAULT_CALL_COUNTER_CONFIG };
-  return {
-    enabled: Boolean(payload.enabled),
-    channelId: payload.channel_id !== null && payload.channel_id !== undefined ? String(payload.channel_id) : null,
-    message: typeof payload.message === "string" ? payload.message : DEFAULT_CALL_COUNTER_CONFIG.message,
-    count: typeof payload.count === "number" ? payload.count : DEFAULT_CALL_COUNTER_CONFIG.count,
-  };
-}
+const DEFAULT_SUGGESTIONS_CONFIG: SuggestionsConfig = {
+  status: true,
+  channel: "1101",
+  immune_role_id: null,
+  create_threads: true,
+  thread_message: "{user}, este tópico foi criado para discutir a sua sugestão.",
+  auto_moderation: { ...DEFAULT_AUTO_MOD },
+};
 
-export async function fetchCallCounterConfig(): Promise<CallCounterConfig> {
-  const response = await apiRequest("/api/automations/call-counter-config", { method: "GET" });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Call counter config error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return mapCallCounterFromBackend(data.config);
-}
+const DEFAULT_CALL_COUNTER_CONFIG: CallCounterConfig = {
+  enabled: false,
+  channelId: "1102",
+  message: "Chamadas hoje: {count}",
+  count: 12,
+};
 
-export async function updateCallCounterConfig(
-  config: Partial<CallCounterConfig> | Partial<CallCounterBackendConfig>
-): Promise<CallCounterConfig> {
-  const payload = {
-    config: {
-      enabled: Boolean(config.enabled),
-      channel_id: config.channel_id ?? (config.channelId ? Number(config.channelId) : null) ?? null,
-      message: typeof config.message === "string" ? config.message : DEFAULT_CALL_COUNTER_CONFIG.message,
-    },
-  };
-  const response = await apiRequest("/api/automations/call-counter-config", {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Call counter config update error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return mapCallCounterFromBackend(data.config);
+const DEFAULT_CONT_MEMBERS_CALL_CONFIG: ContMembersCallConfig = {
+  ativado: false,
+  estilo: 0,
+  contadores: [],
+};
+
+const DEFAULT_AI_MODERATOR_CONFIG: AiModeratorConfig = {
+  ativado: false,
+  cargo_imune_id: null,
+  prompt: null,
+  rejection_message: "violar regras internas.",
+};
+
+const DEFAULT_TOPICS_CONFIG: TopicsConfig = {
+  ativado: false,
+  immune_role_id: null,
+  topicos: [],
+};
+
+const DEFAULT_NUKE_CONFIG: NukeConfig = {
+  ativado: false,
+  logs_ativados: false,
+  canais: {},
+};
+
+const KEY_SUGGESTIONS = "inkcloud_mock_suggestions";
+const KEY_CALL_COUNTER = "inkcloud_mock_call_counter";
+const KEY_CONT_MEMBERS = "inkcloud_mock_cont_members";
+const KEY_AI_MOD = "inkcloud_mock_ai_mod";
+const KEY_TOPICS = "inkcloud_mock_topics";
+const KEY_NUKE = "inkcloud_mock_nuke";
+
+export async function fetchSuggestionsConfig(): Promise<SuggestionsConfig> {
+  return readMock<SuggestionsConfig>(KEY_SUGGESTIONS, DEFAULT_SUGGESTIONS_CONFIG);
 }
 
 export async function updateSuggestionsConfig(
   config: SuggestionsConfig
 ): Promise<SuggestionsConfig> {
-  const response = await apiRequest("/api/automations/suggestions-config", {
-    method: "PUT",
-    body: JSON.stringify({ config }),
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Suggestions config update error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.config as SuggestionsConfig;
+  return writeMock<SuggestionsConfig>(KEY_SUGGESTIONS, config);
+}
+
+export async function fetchCallCounterConfig(): Promise<CallCounterConfig> {
+  return readMock<CallCounterConfig>(KEY_CALL_COUNTER, DEFAULT_CALL_COUNTER_CONFIG);
+}
+
+export async function updateCallCounterConfig(
+  config: Partial<CallCounterConfig> | Partial<CallCounterBackendConfig>
+): Promise<CallCounterConfig> {
+  const current = readMock<CallCounterConfig>(KEY_CALL_COUNTER, DEFAULT_CALL_COUNTER_CONFIG);
+  const next: CallCounterConfig = {
+    ...current,
+    enabled: typeof config.enabled === "boolean" ? config.enabled : current.enabled,
+    channelId:
+      typeof (config as CallCounterConfig).channelId === "string"
+        ? (config as CallCounterConfig).channelId
+        : typeof (config as CallCounterBackendConfig).channel_id === "number"
+        ? String((config as CallCounterBackendConfig).channel_id)
+        : current.channelId,
+    message: typeof config.message === "string" ? config.message : current.message,
+    count: typeof config.count === "number" ? config.count : current.count,
+  };
+  return writeMock<CallCounterConfig>(KEY_CALL_COUNTER, next);
 }
 
 export async function fetchContMembersCallConfig(): Promise<ContMembersCallConfig> {
-  const response = await apiRequest("/api/automations/cont-members-call-config", { method: "GET" });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Cont members call config error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.config as ContMembersCallConfig;
+  return readMock<ContMembersCallConfig>(KEY_CONT_MEMBERS, DEFAULT_CONT_MEMBERS_CALL_CONFIG);
 }
 
 export async function updateContMembersCallConfig(
   config: ContMembersCallConfig
 ): Promise<ContMembersCallConfig> {
-  const response = await apiRequest("/api/automations/cont-members-call-config", {
-    method: "PUT",
-    body: JSON.stringify({ config }),
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Cont members call config update error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.config as ContMembersCallConfig;
+  return writeMock<ContMembersCallConfig>(KEY_CONT_MEMBERS, config);
 }
 
 export async function fetchAiModeratorConfig(): Promise<AiModeratorConfig> {
-  const response = await apiRequest("/api/automations/ai-moderator-config", { method: "GET" });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`AI moderator config error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.config as AiModeratorConfig;
+  return readMock<AiModeratorConfig>(KEY_AI_MOD, DEFAULT_AI_MODERATOR_CONFIG);
 }
 
 export async function updateAiModeratorConfig(config: AiModeratorConfig): Promise<AiModeratorConfig> {
-  const response = await apiRequest("/api/automations/ai-moderator-config", {
-    method: "PUT",
-    body: JSON.stringify({ config }),
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`AI moderator config update error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.config as AiModeratorConfig;
+  return writeMock<AiModeratorConfig>(KEY_AI_MOD, config);
 }
 
 export async function fetchTopicsConfig(): Promise<TopicsConfig> {
-  const response = await apiRequest("/api/automations/topics-config", { method: "GET" });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Topics config error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.config as TopicsConfig;
+  return readMock<TopicsConfig>(KEY_TOPICS, DEFAULT_TOPICS_CONFIG);
 }
 
 export async function updateTopicsConfig(config: TopicsConfig): Promise<TopicsConfig> {
-  const response = await apiRequest("/api/automations/topics-config", {
-    method: "PUT",
-    body: JSON.stringify({ config }),
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Topics config update error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.config as TopicsConfig;
+  return writeMock<TopicsConfig>(KEY_TOPICS, config);
 }
 
 export async function fetchNukeConfig(): Promise<NukeConfig> {
-  const response = await apiRequest("/api/automations/nuke-config", { method: "GET" });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Nuke config error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.config as NukeConfig;
+  return readMock<NukeConfig>(KEY_NUKE, DEFAULT_NUKE_CONFIG);
 }
 
 export async function updateNukeConfig(config: NukeConfig): Promise<NukeConfig> {
-  const response = await apiRequest("/api/automations/nuke-config", {
-    method: "PUT",
-    body: JSON.stringify({ config }),
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Nuke config update error (${response.status}): ${text || "unknown"}`);
-  }
-  const data = await response.json();
-  return data.config as NukeConfig;
+  return writeMock<NukeConfig>(KEY_NUKE, config);
 }
