@@ -1,8 +1,12 @@
-import type { Config } from "tailwindcss";
-
-export default {
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   prefix: "",
   theme: {
     container: {
@@ -21,12 +25,12 @@ export default {
           '"SF Pro"',
           '"SF Pro Display"',
           '"SF Pro Text"',
-          'Inter',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          'system-ui',
+          "Inter",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "system-ui",
           '"Segoe UI"',
-          'sans-serif',
+          "sans-serif",
         ],
       },
       colors: {
@@ -150,4 +154,4 @@ export default {
     },
   },
   plugins: [require("tailwindcss-animate")],
-} satisfies Config;
+};
